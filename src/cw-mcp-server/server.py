@@ -29,7 +29,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(current_dir)
 
 # Create the MCP server for CloudWatch logs
-mcp = FastMCP("CloudWatch Logs Analyzer")
+mcp = FastMCP("CloudWatch Logs Analyzer", port=8888)
 
 # Initialize our resource and tools classes with the specified AWS profile and region
 cw_resource = CloudWatchLogsResource(profile_name=args.profile, region_name=args.region)
@@ -475,6 +475,32 @@ async def correlate_logs(
     pass
 
 
+
+def start_credential_updater():
+    import threading
+    import time
+    from novologutility.utils import get_aws_credential_kwargs
+    credentials = get_aws_credential_kwargs("dummy")
+    print(f"Initial credentials: {credentials}")
+    os.environ["AWS_ACCESS_KEY_ID"] = credentials["aws_access_key_id"]
+    os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["aws_secret_access_key"]
+    os.environ["AWS_SESSION_TOKEN"] = credentials["aws_session_token"]
+
+    def _update_credentials():
+        while True:
+            time.sleep(60 * 60 * 4) # 4 hours
+            print("Updating credentials")
+            credentials = get_aws_credential_kwargs("dummy")
+            os.environ["AWS_ACCESS_KEY_ID"] = credentials["aws_access_key_id"]
+            os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["aws_secret_access_key"]
+            os.environ["AWS_SESSION_TOKEN"] = credentials["aws_session_token"]
+    
+    threading.Thread(target=_update_credentials).start()
+
+
 if __name__ == "__main__":
     # Run the MCP server
-    mcp.run()
+    # `uv pip install -U novo-log-utility --extra-index-url https://us-artifactory.telenav.com/api/pypi/telenav-pypi-preprod/simple`
+    # `ux run server.py`
+    start_credential_updater()
+    mcp.run(transport="sse")
