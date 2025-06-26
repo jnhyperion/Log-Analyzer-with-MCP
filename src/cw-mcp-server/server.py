@@ -482,6 +482,7 @@ def start_credential_updater():
     from novologutility.utils import get_aws_credential_kwargs
     credentials = get_aws_credential_kwargs("dummy")
     print(f"Initial credentials: {credentials}")
+    os.environ["AWS_REGION_NAME"] = "us-west-1"
     os.environ["AWS_ACCESS_KEY_ID"] = credentials["aws_access_key_id"]
     os.environ["AWS_SECRET_ACCESS_KEY"] = credentials["aws_secret_access_key"]
     os.environ["AWS_SESSION_TOKEN"] = credentials["aws_session_token"]
